@@ -2,10 +2,12 @@ const _page_params = {};
 
 set_global('page_params', _page_params);
 set_global('i18n', global.stub_i18n);
+set_global('$', global.make_zjquery());
 zrequire('people');
 zrequire('presence');
 zrequire('util');
 zrequire('user_status');
+
 zrequire('buddy_data');
 set_global('timerender', {});
 
@@ -113,13 +115,41 @@ run_test('buddy_status', () => {
     assert.equal(buddy_data.buddy_status(me.user_id), 'active');
 });
 
-run_test('user_title', () => {
-    assert.equal(buddy_data.user_title(me.user_id), 'Human Myself is active');
+run_test('title_data', () => {
+    var is_group = 'true';
+    var user_ids_string = "9999,1000";
+    var expected_group_data = {
+        is_group: is_group,
+        recipients: "Human Selma, Old User",
+    };
+    assert.deepEqual(buddy_data.get_title_data(user_ids_string, is_group), expected_group_data);
+
+    is_group = '';
+
     user_status.set_status_text({
         user_id: me.user_id,
         status_text: 'out to lunch',
     });
-    assert.equal(buddy_data.user_title(me.user_id), 'out to lunch');
+
+    var expected_data = {
+        is_group: is_group,
+        status_text: 'out to lunch',
+        last_seen: 'translated: Active now',
+        is_away: false,
+        name: 'Human Myself',
+        online_now: true,
+    };
+    assert.deepEqual(buddy_data.get_title_data(me.user_id, is_group), expected_data);
+
+    expected_data = {
+        is_group: is_group,
+        status_text: undefined,
+        last_seen: 'translated: More than 2 weeks ago',
+        is_away: false,
+        name: 'Old User',
+        online_now: false,
+    };
+    assert.deepEqual(buddy_data.get_title_data(old_user.user_id, is_group), expected_data);
 });
 
 run_test('simple search', () => {

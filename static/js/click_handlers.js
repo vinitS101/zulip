@@ -1,3 +1,6 @@
+var render_buddy_list_tooltip = require('../templates/buddy_list_tooltip.hbs');
+var render_buddy_list_tooltip_content = require('../templates/buddy_list_tooltip_content.hbs');
+
 var click_handlers = (function () {
 
 // We don't actually export anything yet; this is just for consistency.
@@ -463,6 +466,7 @@ exports.initialize = function () {
         e.preventDefault();
         e.stopPropagation();
         popovers.hide_all();
+        $(".tooltip").remove();
     });
 
     $('#group-pms').expectOne().on('click', '.selectable_sidebar_block', function (e) {
@@ -472,12 +476,85 @@ exports.initialize = function () {
         e.preventDefault();
         e.stopPropagation();
         popovers.hide_all();
+        $(".tooltip").remove();
     });
 
     $("#subscriptions_table").on("click", ".exit, #subscription_overlay", function (e) {
         if ($(e.target).is(".exit, .exit-sign, #subscription_overlay, #subscription_overlay > .flex")) {
             subs.close();
         }
+    });
+
+    // BUDDY LIST TOOLTIPS
+
+    $('#user_presences').on('mouseenter', '.user_circle', function (e) {
+        e.stopPropagation();
+        var elem = $(e.currentTarget);
+        var content = elem.attr('data-hover');
+        elem.tooltip({
+            title: content,
+            trigger: 'hover',
+            placement: 'bottom',
+            animation: false,
+        });
+        elem.tooltip('show');
+    });
+
+    $('#user_presences').on('mouseleave', '.user_circle', function (e) {
+        e.stopPropagation();
+        $(e.currentTarget).tooltip('destroy');
+    });
+
+    $('#user_presences').on('mouseenter', '.user-presence-link', function (e) {
+        e.stopPropagation();
+        var elem = $(e.currentTarget);
+        var user_id = elem.attr('data-user-id');
+        var title_data = buddy_data.get_title_data(user_id, 'false');
+
+        elem.tooltip({
+            template: render_buddy_list_tooltip(),
+            title: render_buddy_list_tooltip_content(title_data),
+            trigger: 'hover',
+            placement: 'bottom',
+            animation: false,
+        });
+        elem.tooltip('show');
+
+        $(".tooltip").css('left', e.pageX + 'px');
+        $(".tooltip").css('top', e.pageY + 'px');
+    });
+
+    $('#user_presences').on('mouseleave click', '.user-presence-link', function (e) {
+        e.stopPropagation();
+        $(e.currentTarget).tooltip('destroy');
+    });
+
+    // PM LIST TOOLTIPS
+
+    $("body").on('mouseenter', '#pm_user_status, #group_pms_right_sidebar', function (e) {
+        $(".tooltip").remove();
+        e.stopPropagation();
+        var elem = $(e.currentTarget);
+        var user_ids_string = elem.attr('data-user-ids-string');
+        var is_group = elem.attr('data-is-group');
+
+        var title_data = buddy_data.get_title_data(user_ids_string, is_group);
+        elem.tooltip({
+            template: render_buddy_list_tooltip(),
+            title: render_buddy_list_tooltip_content(title_data),
+            trigger: 'hover',
+            placement: 'bottom',
+            animation: false,
+        });
+        elem.tooltip('show');
+
+        $(".tooltip").css('left', e.pageX + 'px');
+        $(".tooltip").css('top', e.pageY + 'px');
+    });
+
+    $("body").on('mouseleave', '#pm_user_status, #group_pms_right_sidebar', function (e) {
+        e.stopPropagation();
+        $(e.currentTarget).tooltip('destroy');
     });
 
     // HOME
