@@ -192,34 +192,38 @@ function get_rendered_emoji(section, index) {
     }
 }
 
+exports.get_sorted_search_results = function (query) {
+    const categories = exports.complete_emoji_catalog;
+    const search_terms = query.split(" ");
+    search_results.length = 0;
+
+    for (const category of categories) {
+        if (category.name === "Popular") {
+            continue;
+        }
+        const emojis = category.emojis;
+
+        for (const emoji_dict of emojis) {
+            for (const alias of emoji_dict.aliases) {
+                const match = search_terms.every((search_term) => alias.includes(search_term));
+                if (match) {
+                    search_results.push({ ...emoji_dict, emoji_name: alias });
+                    break;  // We only need the first matching alias per emoji.
+                }
+            }
+        }
+    }
+
+    return typeahead.sort_emojis(search_results, query);
+}
+
 function filter_emojis() {
     const elt = $(".emoji-popover-filter").expectOne();
     const query = elt.val().trim().toLowerCase();
     const message_id = $(".emoji-search-results-container").data("message-id");
     const search_results_visible = $(".emoji-search-results-container").is(":visible");
     if (query !== "") {
-        const categories = exports.complete_emoji_catalog;
-        const search_terms = query.split(" ");
-        search_results.length = 0;
-
-        for (const category of categories) {
-            if (category.name === "Popular") {
-                continue;
-            }
-            const emojis = category.emojis;
-
-            for (const emoji_dict of emojis) {
-                for (const alias of emoji_dict.aliases) {
-                    const match = search_terms.every((search_term) => alias.includes(search_term));
-                    if (match) {
-                        search_results.push({ ...emoji_dict, emoji_name: alias });
-                        break;  // We only need the first matching alias per emoji.
-                    }
-                }
-            }
-        }
-
-        const sorted_search_results = typeahead.sort_emojis(search_results, query);
+        const sorted_search_results = exports.get_sorted_search_results(query);
         const rendered_search_results = render_emoji_popover_search_results({
             search_results: sorted_search_results,
             message_id: message_id,
